@@ -5,12 +5,16 @@ import json
 import datetime
 import telepot
 
+TARGET_PRICE = 0
+LOSS_PRICE = 1
+BUY_PRICE = 2
+HAVING_QTY = 3
 class UpbitPy():
     def __init__(self):
         now = datetime.datetime.now()
-        self.check_fail = 'logs/' + now.strftime('%Y-%m-%d_%H%M%S') + '.log'
-        file = open(self.check_fail, 'w', encoding="UTF8")
-        file.close()
+        self.check_fail = 'logs/' + now.strftime('%Y-%m-%d') + '.log'
+        # file = open(self.check_fail, 'w', encoding="UTF8")
+        # file.close()
         
         self.tickers = {"KRW-BTC": [0,0,0,0], "KRW-ETH": [0,0,0,0]} # [매수목표가, 손절가, 매수가, 보유수]
         self.buyCount = len(self.tickers) # 코인 개수
@@ -31,7 +35,86 @@ class UpbitPy():
         self.setCoinsPrice()    # 목표가 계산
         self.getMAline()    # 이동평균 계산
         self.checkNowMyTickers()    # 보유 현황 확인
+        # self.checkMA()    # 이동평균보다 현재가가 낮으면 Skip
         
+        while True:
+            try:
+                for ticker in self.tickers:
+                    nowPrice = pyupbit.get_current_price(ticker)
+                    # print(f"{ticker}의 현재가 {nowPrice}")
+                    
+                    if self.tickers[ticker][BUY_PRICE] == 0:    # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 매수
+                        if nowPrice > int(self.tickers[ticker][TARGET_PRICE]):
+                            ret = self.upbit.buy_market_order(ticker, self.KRWBalances[ticker]) # 시장가 매수(티커, 금액)
+                            sendText = f"[{ticker}] 매수 -> 현재가: {nowPrice}, 목표가: {self.tickers[ticker][TARGET_PRICE]}, 수량: {self.KRWBalances[ticker]}, 응답: {ret}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
+                            
+                            time.sleep(1)
+                            self.checkNowMyTickers()
+                    else:   # 보유수량이 있으므로 손절가와 현재가 비교 후 매도
+                        if nowPrice < float(self.tickers[ticker][LOSS_PRICE]):
+                            ret = self.upbit.sell_market_order(ticker, self.tickers[ticker][HAVING_QTY]) # 시장가 매도(티커, 수량)
+                            self.tickers[ticker][BUY_PRICE] = 0
+                            self.tickers[ticker][HAVING_QTY] = 0
+                            sendText = f"[{ticker}] 매도 -> 현재가: {nowPrice}, 손절(하한)가: {self.tickers[ticker][LOSS_PRICE]}, 수량: {self.tickers[ticker][HAVING_QTY]}, 응답: {ret}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
+                            
+                nowMin = int(datetime.datetime.now().strftime('%M'))
+                if nowMin > self.chkTime:
+                    if nowMin == 1:
+                        sendText = f"매매 대기 중 - {int(datetime.datetime.now().strftime('%H'))}"
+                        self.log(sendText)
+                        self.checkNowMyTickers()
+
+                    if nowMin == 59:
+                        self.chkTime = -1
+                    else:
+                        self.chkTime = nowMin
+                
+                if int(datetime.datetime.now().strftime('%H%M')) == 859:
+                    sendText = "매수종료 및 전량매도"
+                    self.log(sendText)
+                    self.send_msg(sendText)
+                    
+                    self.sellAllCoin()  # 전체 매도
+                    
+                    quit()
+                    
+                time.sleep(0.1)
+                
+                        
+            except Exception as e:
+                sendText = f"예외 발생 : {e}"
+                self.log(sendText)
+                
+        
+    def checkMA(self):
+        for ticker in self.MAline:
+            nowPrice = pyupbit.get_current_price(ticker)
+            if nowPrice < max(self.MAline[ticker]):
+                if self.tickers[ticker][HAVING_QTY] > 0:
+                    ret = self.upbit.sell_market_order(ticker, self.tickers[ticker][HAVING_QTY])
+                    sendText = f"매도 완료 -> {ret}"
+                    self.log(sendText)
+                    self.send_msg(sendText)
+                
+                del self.tickers[ticker]    # 현재가가 이동평균보다 낮을 경우 tickers에서 삭제
+            
+            time.sleep(0.1)
+            
+        if len(self.tickers) != 0:
+            sendText = f"현재가 구독 시작 : {self.tickers}"
+            self.log(sendText)
+            self.send_msg(sendText)
+        else:
+            sendText = "모든 코인이 현재가 이하 -> 종료"
+            self.log(sendText)
+            self.send_msg(sendText)
+            
+            quit()
+
     def checkNowMyTickers(self):
         balances = self.upbit.get_balances()  # 전체 잔고 조회
         print(balances)
@@ -44,9 +127,9 @@ class UpbitPy():
                 ticker = balance['unit_currency'] + '-' + balance['currency']
                 price = float(balance['avg_buy_price'])
                 myCoin = float(balance['balance'])
-                self.tickers[ticker][2] = price   # 평균 매수가
-                self.tickers[ticker][3] = myCoin    # 코인 보유수량
-                
+                self.tickers[ticker][BUY_PRICE] = price   # 평균 매수가
+                self.tickers[ticker][HAVING_QTY] = myCoin  # 코인 보유수량
+
         sendText = f"보유코인 현황 : {self.tickers}"
         self.log(sendText)
         self.send_msg(sendText)
@@ -69,7 +152,7 @@ class UpbitPy():
             ma.append(close.rolling(window=10).mean()[-2])
         
             self.MAline[ticker] = ma
-            self.tickers[ticker][1] = df['low'].min()   # 저가들 중 min 값 = 손절가
+            self.tickers[ticker][LOSS_PRICE] = df['low'].min()   # 저가들 중 min 값 = 손절가
             
             time.sleep(0.1)
             
@@ -86,8 +169,8 @@ class UpbitPy():
             k_range = interval * 0.5
             targetPrice = df.iloc[1]['open'] + k_range  # 1번째 인덱스는 당일 데이터
             
-            self.tickers[ticker][0] = targetPrice
-            self.tickers[ticker][1] = df['low'].min()
+            self.tickers[ticker][TARGET_PRICE] = targetPrice
+            self.tickers[ticker][LOSS_PRICE] = df['low'].min()
             
             time.sleep(0.1)
             
@@ -95,6 +178,24 @@ class UpbitPy():
         sendText = f"목표가 계산 : {self.tickers}"
         self.log(sendText)
         self.send_msg(sendText)
+        
+    def sellAllCoin(self):
+        self.checkNowMyTickers()
+        
+        count = 0
+        for ticker in self.tickers:
+            if self.tickers[ticker][HAVING_QTY] > 0:
+                ret = self.upbit.sell_market_order(ticker, self.tickers[ticker][HAVING_QTY])
+                sendText = f"{ticker} 매도요청 -> 응답: {ret}"
+                self.log(sendText)
+                self.send_msg(sendText)
+                count += 1
+                
+                time.sleep(1)
+                
+        text = f"전량매도 완료({count})"
+        self.log(text)
+        self.send_msg(text)
         
     def send_msg(self, msg):
         with open('telepot.json', 'r') as file:
@@ -107,9 +208,10 @@ class UpbitPy():
     def log(self, msg):
         now = datetime.datetime.now()
         curTime = now.strftime('%Y-%m-%d %H:%M:%S')
-        print(curTime + ' - ' + msg + '\n')
-        file = open(self.check_fail, 'a')
-        file.write(msg)
+        sendText = curTime + ' - ' + msg
+        print(sendText)
+        file = open(self.check_fail, 'a', encoding='UTF8')
+        file.write(sendText + '\n')
         file.close()
     
 if __name__ == "__main__":
