@@ -61,6 +61,9 @@ class UpbitPy():
                             self.log(sendText)
                             self.send_msg(sendText)
                             
+                            time.sleep(1)
+                            self.checkNowMyTickers()
+                           
                 nowMin = int(datetime.datetime.now().strftime('%M'))
                 if nowMin > self.chkTime:
                     if nowMin == 1:
@@ -82,9 +85,7 @@ class UpbitPy():
                     
                     quit()
                     
-                time.sleep(0.1)
-                
-                        
+                time.sleep(0.15)
             except Exception as e:
                 sendText = f"예외 발생 : {e}"
                 self.log(sendText)
