@@ -35,7 +35,7 @@ class UpbitPy():
         self.setCoinsPrice()    # 목표가 계산
         self.getMAline()    # 이동평균 계산
         self.checkNowMyTickers()    # 보유 현황 확인
-        # self.checkMA()    # 이동평균보다 현재가가 낮으면 Skip
+        self.checkMA()    # 이동평균보다 현재가가 낮으면 Skip
         
         while True:
             try:
