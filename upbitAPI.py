@@ -131,15 +131,13 @@ class UpbitPy():
                 self.tickers[ticker][BUY_PRICE] = price   # 평균 매수가
                 self.tickers[ticker][HAVING_QTY] = myCoin  # 코인 보유수량
 
-        sendText = f"보유코인 현황 : {self.tickers}"
-        self.log(sendText)
-        self.send_msg(sendText)
-        
+        nowPrices = []
         for ticker in self.tickers:
+            nowPrices.append({ticker : pyupbit.get_current_price(ticker)}) 
             balance = float(KRWBlanace) / self.buyCount # 코인 갯수별 균등 매매
             self.KRWBalances[ticker] = (math.trunc(balance/1000) * 1000) - 5000
             
-        sendText = f"보유 자산 : {KRWBlanace}원(코인별 매수금액 : {self.KRWBalances}"
+        sendText = f"현재가: {nowPrices}\n\n보유코인 현황 : {self.tickers}\n\n보유 자산 : {int(KRWBlanace)}원(코인별 매수금액 : {self.KRWBalances}"
         self.log(sendText)
         self.send_msg(sendText)
     
@@ -153,7 +151,7 @@ class UpbitPy():
             ma.append(close.rolling(window=10).mean()[-2])
         
             self.MAline[ticker] = ma
-            self.tickers[ticker][LOSS_PRICE] = df['low'].min()   # 저가들 중 min 값 = 손절가
+            #self.tickers[ticker][LOSS_PRICE] = df['low'].min()   # 저가들 중 min 값 = 손절가
             
             time.sleep(0.1)
             
@@ -165,7 +163,7 @@ class UpbitPy():
         for ticker in self.tickers:
             # 코인별 매수 목표가 계산
             df = pyupbit.get_ohlcv(ticker, count=2)
-            
+            print(df)
             interval = df.iloc[0]['high'] - df.iloc[0]['low']   # 0번째 인덱스는 전날 데이터
             k_range = interval * 0.5
             targetPrice = df.iloc[1]['open'] + k_range  # 1번째 인덱스는 당일 데이터
