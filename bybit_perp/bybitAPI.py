@@ -1,4 +1,4 @@
-import pybit
+from pybit.unified_trading import HTTP
 import time
 import math
 import json
@@ -20,17 +20,16 @@ class BybitAPI():
         
         now = datetime.datetime.now()
         self.check_fail = 'logs/' + now.strftime('%Y-%m-%d') + '.log'
-        # file = open(self.check_fail, 'w', encoding="UTF8")
-        # file.close()
 
-        # [매수목표가, 손절가, 매수가, 보유수]
-        self.tickers = {"BTCUSDT": [0, 0, 0, 0], "ETHUSDT": [0, 0, 0, 0]}
-        self.buyCount = len(self.tickers)  # 코인 개수
+        # [매수/매도 목표가, 손절가, 매수/매도가, 보유수]
+        self.tickers_buy = {"BTCUSDT": [0, 0, 0, 0], "ETHUSDT": [0, 0, 0, 0]}
+        self.tickers_sell = {"BTCUSDT": [0, 0, 0, 0], "ETHUSDT": [0, 0, 0, 0]}
+        self.buyCount = len(self.tickers_buy)  # 매수 코인 개수
+        self.sellCount = len(self.tickers_sell)  # 매도 코인 개수
         self.chkTime = int(datetime.datetime.now().strftime('%M'))
-        self.KRWBalances = {}   # 코인별 매수 금액
-        self.MAline = {}    # 코인별 이평선
+        self.balances = {}   # 코인별 매수/매도 금액
 
-        sendText = "변동성 돌파 전략을 시작합니다."
+        sendText = "[bybit-perp] 변동성 돌파 전략을 시작합니다."
         self.log(sendText)
         self.send_msg(sendText)
 
@@ -39,11 +38,18 @@ class BybitAPI():
             apiKey = data["api-key"]
             secret = data["secret"]
 
-        self.upbit = pyupbit.Upbit(apiKey, secret)
+
+        self.bybit = HTTP(
+            #endpoint="https://api.bybit.com",
+            testnet=True,
+            api_key=apiKey,
+            api_secret=secret
+        )
+        
+        self.session = HTTP(testnet=True)
+        
         self.setCoinsPrice()    # 목표가 계산
-        self.getMAline()    # 이동평균 계산
         self.checkNowMyTickers()    # 보유 현황 확인
-        self.checkMA()    # 이동평균보다 현재가가 낮으면 Skip
 
         while True:
             try:
@@ -101,40 +107,20 @@ class BybitAPI():
                 sendText = f"예외 발생 : {e}"
                 self.log(sendText)
 
-    def checkMA(self):
-        for ticker in self.MAline:
-            nowPrice = pyupbit.get_current_price(ticker)
-            if nowPrice < max(self.MAline[ticker]):
-                if self.tickers[ticker][HAVING_QTY] > 0:
-                    ret = self.upbit.sell_market_order(
-                        ticker, self.tickers[ticker][HAVING_QTY])
-                    sendText = f"매도 완료 -> {ret}"
-                    self.log(sendText)
-                    self.send_msg(sendText)
-
-                del self.tickers[ticker]    # 현재가가 이동평균보다 낮을 경우 tickers에서 삭제
-
-            time.sleep(0.1)
-
-        if len(self.tickers) != 0:
-            sendText = f"현재가 구독 시작 : {self.tickers}"
-            self.log(sendText)
-            self.send_msg(sendText)
-        else:
-            sendText = "모든 코인이 현재가 이하 -> 종료"
-            self.log(sendText)
-            self.send_msg(sendText)
-
-            quit()
 
     def checkNowMyTickers(self):
-        balances = self.upbit.get_balances()  # 전체 잔고 조회
-        print(balances)
-        KRWBlanace = 0
-        for balance in balances:
-            if balance['currency'] == 'KRW':
-                KRWBlanace += float(balance['balance'])
-            elif balance['avg_buy_price'] != '0' and (balance['currency'] == 'BTC' or balance['currency'] == 'ETH'):
+        res = self.bybit.get_coins_balance(
+            accountType="CONTRACT"
+        )
+        
+        print(res)
+        USDTBalance = 0
+        for balance in res['result']['balance']:
+            if balance['coin'] == 'USDT':
+                USDTBalance += float(balance['walletBalance'])
+            elif balance['coin'] == 'BTC' or balance['coin'] == 'ETH':
+                if (float(balance['walletBalance']) > 0):
+                    
                 KRWBlanace += float(balance['balance']) * \
                     float(balance['avg_buy_price'])
                 ticker = balance['unit_currency'] + '-' + balance['currency']
@@ -172,21 +158,41 @@ class BybitAPI():
         self.send_msg(sendText)
 
     def setCoinsPrice(self):
-        for ticker in self.tickers:
+        for ticker in self.tickers_buy:
             # 코인별 매수 목표가 계산
-            df = pyupbit.get_ohlcv(ticker, count=2)
-            print(df)
-            interval = df.iloc[0]['high'] - \
-                df.iloc[0]['low']   # 0번째 인덱스는 전날 데이터
+            
+            res = self.session.get_kline(
+                category="linear",
+                symbol=ticker,
+                limit=5,
+            )
+            
+            
+            interval = float(res['result']['list'][1][2]) - float(res['result']['list'][1][3])
             k_range = interval * 0.5
-            targetPrice = df.iloc[1]['open'] + k_range  # 1번째 인덱스는 당일 데이터
+            targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
 
-            self.tickers[ticker][TARGET_PRICE] = targetPrice
-            self.tickers[ticker][LOSS_PRICE] = df['low'].min()
+            self.tickers_buy[ticker][TARGET_PRICE] = targetPrice
+            self.tickers_buy[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][3]),
+                                                        float(res['result']['list'][1][3]),
+                                                        float(res['result']['list'][2][3]),
+                                                        float(res['result']['list'][3][3]),
+                                                        float(res['result']['list'][4][3]))
+            
+            
+            targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
+
+            self.tickers_sell[ticker][TARGET_PRICE] = targetPrice
+            self.tickers_sell[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][2]),
+                                                        float(res['result']['list'][1][2]),
+                                                        float(res['result']['list'][2][2]),
+                                                        float(res['result']['list'][3][2]),
+                                                        float(res['result']['list'][4][2]))
+
 
             time.sleep(0.1)
 
-        sendText = f"목표가 계산 : {self.tickers}"
+        sendText = f"목표가 계산 -> 매수: {self.tickers_buy}, 매도: {self.tickers_sell}"
         self.log(sendText)
         self.send_msg(sendText)
 

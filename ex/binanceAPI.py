@@ -3,9 +3,7 @@ import pprint
 import time
 import datetime
 import pandas as pd
-import larry
 import math
-
 
 with open("../api.txt") as f:
     lines = f.readlines()
@@ -22,17 +20,24 @@ binance = ccxt.binance(config={
     }
 })
 
+def cal_target(exchange, symbol):
+    btc = exchange.fetch_ohlcv(
+        symbol=symbol,
+        timeframe='1d',
+        since=None,
+        limit=10
+    )
 
-symbol = "BTC/USDT"
-long_target, short_target = larry.cal_target(binance, symbol)
-balance = binance.fetch_balance()
-usdt = balance['total']['USDT']
-op_mode = False
-position = {
-    "type": None,
-    "amount": 0
-}
+    df = pd.DataFrame(data=btc, columns=[
+                      'datetime', 'open', 'high', 'low', 'close', 'volume'])
+    df['datetime'] = pd.to_datetime(df['datetime'], unit='ms')
+    df.set_index('datetime', inplace=True)
 
+    yesterday = df.iloc[-2]
+    today = df.iloc[-1]
+    long_target = today['open'] + (yesterday['high'] - yesterday['low']) * 0.5
+    short_target = today['open'] - (yesterday['high'] - yesterday['low']) * 0.5
+    return long_target, short_target
 
 def cal_amount(usdt_balance, cur_price):
     portion = 0.1
@@ -62,6 +67,16 @@ def exit_position(exchange, symbol, position):
         position['type'] = None
 
 
+symbol = "BTC/USDT"
+long_target, short_target = cal_target(binance, symbol)
+balance = binance.fetch_balance()
+usdt = balance['total']['USDT']
+op_mode = False
+position = {
+    "type": None,
+    "amount": 0
+}
+
 while True:
     now = datetime.datetime.now()
 
@@ -72,7 +87,7 @@ while True:
 
     # udpate target price
     if now.hour == 9 and now.minute == 0 and (20 <= now.second < 30):
-        long_target, short_target = larry.cal_target(binance, symbol)
+        long_target, short_target = cal_target(binance, symbol)
         balance = binance.fetch_balance()
         usdt = balance['total']['USDT']
         op_mode = True
