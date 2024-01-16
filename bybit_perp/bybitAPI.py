@@ -4,6 +4,7 @@ import math
 import json
 import datetime
 import telepot
+from pybit.unified_trading import HTTP
 
 TARGET_PRICE = 0
 LOSS_PRICE = 1
@@ -15,6 +16,7 @@ TICK_SIZE = 4
 class BybitAPI():
     def __init__(self):
         # 목표가 계산(사이드 결정(Long, Short)
+        # 이동평균 계산
         # 이동평균 계산
         # 보유현황 확인
         # Polling하면서 매수, 매도 진행
@@ -235,6 +237,7 @@ class BybitAPI():
             res = self.session.get_kline(
                 category="linear",
                 symbol=ticker,
+                interval='D',
                 limit=5,
             )
             
