@@ -46,7 +46,7 @@ class BybitAPI():
             api_secret=secret
         )
         
-        self.session = HTTP(testnet=True)
+        self.session = HTTP()
         
         self.setTickSize()  # 틱사이즈 계산
         self.setCoinsPrice()    # 목표가 계산
@@ -77,7 +77,7 @@ class BybitAPI():
                                 positionIdx=0,
                             )
                             
-                            sendText = f"[{ticker}] Open Long(매수) -> 현재가: {nowPrice}, 목표가: {self.tickers_buy[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
+                            sendText = f"변동성 돌파! [{ticker}] Long 진입 -> 현재가: {nowPrice}, 목표가: {self.tickers_buy[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
 
@@ -97,7 +97,7 @@ class BybitAPI():
                             
                             self.tickers_buy[ticker][AVG_PRICE] = 0
                             self.tickers_buy[ticker][HAVING_QTY] = 0
-                            sendText = f"[{ticker}] Close Long(매도) -> 현재가: {nowPrice}, 손절가: {self.tickers_buy[ticker][LOSS_PRICE]}, 수량: {self.tickers_buy[ticker][HAVING_QTY]}, 응답: {res}"
+                            sendText = f"변동성 돌파! [{ticker}] Long 청산 -> 현재가: {nowPrice}, 손절가: {self.tickers_buy[ticker][LOSS_PRICE]}, 수량: {self.tickers_buy[ticker][HAVING_QTY]}, 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
 
@@ -120,7 +120,7 @@ class BybitAPI():
                                 positionIdx=0,
                             )
 
-                            sendText = f"[{ticker}] Open Short(매도) -> 현재가: {nowPrice}, 목표가: {self.tickers_sell[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
+                            sendText = f"변동성 돌파! [{ticker}] Short 진입 -> 현재가: {nowPrice}, 목표가: {self.tickers_sell[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
 
@@ -140,7 +140,7 @@ class BybitAPI():
 
                             self.tickers_sell[ticker][AVG_PRICE] = 0
                             self.tickers_sell[ticker][HAVING_QTY] = 0
-                            sendText = f"[{ticker}] Close short(매수) -> 현재가: {nowPrice}, 손절가: {self.tickers_sell[ticker][LOSS_PRICE]}, 수량: {self.tickers_sell[ticker][HAVING_QTY]}, 응답: {res}"
+                            sendText = f"변동성 돌파! [{ticker}] Short 청산 -> 현재가: {nowPrice}, 손절가: {self.tickers_sell[ticker][LOSS_PRICE]}, 수량: {self.tickers_sell[ticker][HAVING_QTY]}, 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
 
@@ -160,7 +160,7 @@ class BybitAPI():
                         self.chkTime = nowMin
 
                 if int(datetime.datetime.now().strftime('%H%M')) == 859:
-                    sendText = "매수종료 및 전량청산"
+                    sendText = "거래종료 및 전량청산"
                     self.log(sendText)
                     self.send_msg(sendText)
 
@@ -189,7 +189,7 @@ class BybitAPI():
             accountType="CONTRACT"
         )
         
-        print(res)
+        #print(res)
         USDTBalance = 0
         for balance in res['result']['balance']:
             if balance['coin'] == 'USDT':
@@ -207,11 +207,11 @@ class BybitAPI():
                 price = float(position['avgPrice'])
                 size = float(position['size'])
                 if (position['side'] == 'Buy'):
-                    self.tickers_buy[ticker][AVG_PRICE] = price   # 평균 매수가
-                    self.tickers_buy[ticker][HAVING_QTY] = size  # 코인 보유수량
+                    self.tickers_buy[symbol][AVG_PRICE] = price   # 평균 매수가
+                    self.tickers_buy[symbol][HAVING_QTY] = size  # 코인 보유수량
                 else:
-                    self.tickers_sell[ticker][AVG_PRICE] = price   # 평균 매수가
-                    self.tickers_sell[ticker][HAVING_QTY] = size  # 코인 보유수량
+                    self.tickers_sell[symbol][AVG_PRICE] = price   # 평균 매도가
+                    self.tickers_sell[symbol][HAVING_QTY] = size  # 코인 보유수량
 
         nowPrices = []
         for ticker in self.tickers_buy:
@@ -222,9 +222,9 @@ class BybitAPI():
             
             nowPrices.append({ticker: float(res['result']['list'][0]['lastPrice'])})
             balance = float(USDTBalance) / self.buyCount  # 코인 갯수별 균등 매매
-            self.USDTBalance[ticker] = (math.trunc(balance/1000) * 1000) - 5000
+            self.USDTBalance[ticker] = (math.trunc(balance/1000) * 1000)
 
-        sendText = f"현재가: {nowPrices}\n\n보유코인 현황 -> long : {self.tickers_buy}, short : {self.tickers_sell} \n\n보유 자산 : {int(USDTBalance)}원(코인별 매수금액 : {self.USDTBalance}"
+        sendText = f"현재가: {nowPrices}\n\n보유코인 현황 -> long : {self.tickers_buy}, short : {self.tickers_sell} \n\n보유 자산 : {int(USDTBalance)}$(코인별 거래금액 : {self.USDTBalance})"
         self.log(sendText)
         self.send_msg(sendText)
 
@@ -243,6 +243,8 @@ class BybitAPI():
             interval = float(res['result']['list'][1][2]) - float(res['result']['list'][1][3])
             k_range = interval * 0.5
             targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
+            targetPrice = int(
+                targetPrice / self.tickers_buy[ticker][TICK_SIZE]) * self.tickers_buy[ticker][TICK_SIZE]
 
             self.tickers_buy[ticker][TARGET_PRICE] = targetPrice
             self.tickers_buy[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][3]),
@@ -253,6 +255,8 @@ class BybitAPI():
             
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
+            targetPrice = int(
+                targetPrice / self.tickers_sell[ticker][TICK_SIZE]) * self.tickers_sell[ticker][TICK_SIZE]
 
             self.tickers_sell[ticker][TARGET_PRICE] = targetPrice
             self.tickers_sell[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][2]),
@@ -264,7 +268,7 @@ class BybitAPI():
 
             time.sleep(0.1)
 
-        sendText = f"목표가 계산 -> 매수: {self.tickers_buy}, 매도: {self.tickers_sell}"
+        sendText = f"목표가 계산 -> Long: {self.tickers_buy}, Short: {self.tickers_sell}"
         self.log(sendText)
         self.send_msg(sendText)
 
