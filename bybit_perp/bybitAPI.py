@@ -13,6 +13,8 @@ UPL = 4
 TICK_SIZE = 5
 QTY_STEP = 6
 
+LEVERAGE = 10
+
 
 class BybitAPI():
     def __init__(self):
@@ -67,14 +69,15 @@ class BybitAPI():
                     # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 포지션 오픈
                     if self.tickers_buy[ticker][AVG_PRICE] == 0:
                         if nowPrice > int(self.tickers_buy[ticker][TARGET_PRICE]):
+                            # 레버리지
                             qty = round(self.USDTBalance[ticker] / nowPrice /
-                                        self.tickers_buy[ticker][QTY_STEP]) * self.tickers_buy[ticker][QTY_STEP]
+                                        self.tickers_buy[ticker][QTY_STEP] * LEVERAGE) * self.tickers_buy[ticker][QTY_STEP]
                             res = self.bybit.place_order(
                                 category="linear",
                                 symbol=ticker,
                                 side="Buy",
                                 orderType="Market",
-                                qty=qty * 10,   # 10배 레버리지
+                                qty=qty,
                                 timeInForce="GTC",
                                 positionIdx=0,
                             )
@@ -99,6 +102,7 @@ class BybitAPI():
                             
                             self.tickers_buy[ticker][AVG_PRICE] = 0
                             self.tickers_buy[ticker][HAVING_QTY] = 0
+                            self.tickers_buy[ticker][UPL] = 0
                             sendText = f"변동성 돌파! [{ticker}] Long 청산 -> 현재가: {nowPrice} < 손절가: {self.tickers_buy[ticker][LOSS_PRICE]}, 수량: {self.tickers_buy[ticker][HAVING_QTY]}, 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
@@ -110,14 +114,15 @@ class BybitAPI():
                     # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 오픈 포지션
                     if self.tickers_sell[ticker][AVG_PRICE] == 0:
                         if nowPrice < int(self.tickers_sell[ticker][TARGET_PRICE]):
+                            # 레버리지
                             qty = round(self.USDTBalance[ticker] / nowPrice /
-                                        self.tickers_sell[ticker][QTY_STEP]) * self.tickers_sell[ticker][QTY_STEP]
+                                        self.tickers_sell[ticker][QTY_STEP] * LEVERAGE) * self.tickers_sell[ticker][QTY_STEP]
                             res = self.bybit.place_order(
                                 category="linear",
                                 symbol=ticker,
                                 side="Sell",
                                 orderType="Market",
-                                qty=qty * 10,   # 10배 레버리지
+                                qty=qty,
                                 timeInForce="GTC",
                                 positionIdx=0,
                             )
@@ -142,6 +147,7 @@ class BybitAPI():
 
                             self.tickers_sell[ticker][AVG_PRICE] = 0
                             self.tickers_sell[ticker][HAVING_QTY] = 0
+                            self.tickers_sell[ticker][UPL] = 0
                             sendText = f"변동성 돌파! [{ticker}] Short 청산 -> 현재가: {nowPrice} > 손절가: {self.tickers_sell[ticker][LOSS_PRICE]}, 수량: {self.tickers_sell[ticker][HAVING_QTY]}, 응답: {res}"
                             self.log(sendText)
                             self.send_msg(sendText)
@@ -197,7 +203,7 @@ class BybitAPI():
         USDTBalance = 0
         for balance in res['result']['balance']:
             if balance['coin'] == 'USDT':
-                USDTBalance += float(balance['walletBalance'])
+                USDTBalance += float(balance['transferBalance'])
                 
         res = self.bybit.get_positions(
             category="linear",
