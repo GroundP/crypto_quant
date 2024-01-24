@@ -42,14 +42,22 @@ class BybitAPI():
             data = json.load(file)
             apiKey = data["api-key"]
             secret = data["secret"]
+            isMainnet = data["is-mainnet"]
 
-        self.bybit = HTTP(
-            #endpoint="https://api.bybit.com",
-            testnet=True,
-            api_key=apiKey,
-            api_secret=secret
-        )
-        
+        if isMainnet:
+            self.bybit = HTTP(
+                #endpoint="https://api.bybit.com",
+                api_key=apiKey,
+                api_secret=secret
+            )
+        else:
+            self.bybit = HTTP(
+                # endpoint="https://api-testnet.bybit.com",
+                testnet=True,
+                api_key=apiKey,
+                api_secret=secret
+            )
+            
         self.session = HTTP()
         
         self.setTickSize()  # 틱사이즈 계산
@@ -235,7 +243,7 @@ class BybitAPI():
             
             nowPrices.append({ticker: float(res['result']['list'][0]['lastPrice'])})
             balance = float(USDTBalance) / self.buyCount  # 코인 갯수별 균등 매매
-            self.USDTBalance[ticker] = (math.trunc(balance/1000) * 1000)
+            self.USDTBalance[ticker] = (math.trunc(balance/10) * 10)
 
         myCoin = {}
         myCoin["BTCUSDT"] = {}
