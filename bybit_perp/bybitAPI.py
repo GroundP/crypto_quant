@@ -4,6 +4,7 @@ import math
 import json
 import datetime
 import telepot
+from decimal import Decimal
 
 TARGET_PRICE = 0
 LOSS_PRICE = 1
@@ -85,7 +86,7 @@ class BybitAPI():
                                 symbol=ticker,
                                 side="Buy",
                                 orderType="Market",
-                                qty=qty,
+                                qty=Decimal(str(qty)),
                                 timeInForce="GTC",
                                 positionIdx=0,
                             )
@@ -130,7 +131,7 @@ class BybitAPI():
                                 symbol=ticker,
                                 side="Sell",
                                 orderType="Market",
-                                qty=qty,
+                                qty=Decimal(str(qty)),
                                 timeInForce="GTC",
                                 positionIdx=0,
                             )
