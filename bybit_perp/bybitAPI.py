@@ -27,11 +27,15 @@ class BybitAPI():
         now = datetime.datetime.now()
         self.check_fail = 'logs/' + now.strftime('%Y-%m-%d') + '.log'
 
+        self.symbols = ["BTCUSDT", "ETHUSDT"]
+        self.info = [{"symbol": "BTCUSDT", 
+                      "long":  {"target": 0, "loss": 0, "profit": 0, "having": 0, "upl": 0, "tickSize": 0, "qtyStep": 0},
+                      "short": {"target": 0, "loss": 0, "profit": 0, "having": 0, "upl": 0, "tickSize": 0, "qtyStep": 0}},
+                     {"symbol": "ETHUSDT", 
+                      "long": { "target": 0, "loss": 0, "profit": 0, "having": 0, "upl": 0, "tickSize": 0, "qtyStep": 0},
+                      "short": { "target": 0, "loss": 0, "profit": 0, "having": 0, "upl": 0, "tickSize": 0, "qtyStep": 0}}]
         # [매수/매도 목표가, 손절가, 매수/매도가, 보유수, UPL, 틱사이즈, 수량단위]
-        self.tickers_buy = {"BTCUSDT": [0, 0, 0, 0, 0, 0, 0], "ETHUSDT": [0, 0, 0, 0, 0, 0, 0]}
-        self.tickers_sell = {"BTCUSDT": [0, 0, 0, 0, 0, 0, 0], "ETHUSDT": [0, 0, 0, 0, 0, 0, 0]}
-        self.buyCount = len(self.tickers_buy)  # 매수 코인 개수
-        self.sellCount = len(self.tickers_sell)  # 매도 코인 개수
+        self.count = len(self.symbols)  # 매수/매도 코인 개수
         self.chkTime = int(datetime.datetime.now().strftime('%M'))
         self.USDTBalance = {}   # 코인별 매수/매도 금액
 
@@ -192,16 +196,14 @@ class BybitAPI():
 
 
     def setTickSize(self):
-        for ticker in self.tickers_buy:
+        for info in self.info:
             res = self.session.get_instruments_info(
                 category="linear",
-                symbol=ticker
+                symbol=info["symbol"]
             )
             
-            self.tickers_buy[ticker][TICK_SIZE] = float(res['result']['list'][0]['priceFilter']['tickSize'])
-            self.tickers_sell[ticker][TICK_SIZE] = float(res['result']['list'][0]['priceFilter']['tickSize'])
-            self.tickers_buy[ticker][QTY_STEP] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
-            self.tickers_sell[ticker][QTY_STEP] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
+            info["symbol"]["tickSize"] = float(res['result']['list'][0]['priceFilter']['tickSize'])
+            info["symbol"]["qtyStep"] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
     
     def checkNowMyTickers(self):
         res = self.bybit.get_coins_balance(
@@ -227,43 +229,48 @@ class BybitAPI():
                 size = float(position['size'])
                 upl = float(position['unrealisedPnl'])
                 if (position['side'] == 'Buy'):
-                    self.tickers_buy[symbol][AVG_PRICE] = price   # 평균 매수가
-                    self.tickers_buy[symbol][HAVING_QTY] = size  # 코인 보유수량
-                    self.tickers_buy[symbol][UPL] = upl  # Unrealized PL
+                    for info in self.info:
+                        if info["symbol"] == symbol:
+                            info["long"]["average"] = price
+                            info["long"]["having"] = size
+                            info["long"]["upl"] = upl
                 else:
-                    self.tickers_sell[symbol][AVG_PRICE] = price   # 평균 매도가
-                    self.tickers_sell[symbol][HAVING_QTY] = size  # 코인 보유수량
-                    self.tickers_sell[symbol][UPL] = upl  # Unrealized PL
+                    for info in self.info:
+                        if info["symbol"] == symbol:
+                            info["short"]["average"] = price
+                            info["short"]["having"] = size
+                            info["short"]["upl"] = upl
 
         nowPrices = []
-        for ticker in self.tickers_buy:
+        for info in self.info:
             res = self.session.get_tickers(
                 category="linear",
-                symbol=ticker,
+                symbol=info["symbol"],
             )
             
-            nowPrices.append({ticker: float(res['result']['list'][0]['lastPrice'])})
-            balance = float(USDTBalance) / self.buyCount  # 코인 갯수별 균등 매매
-            self.USDTBalance[ticker] = (math.trunc(balance/10) * 10)
+            nowPrices.append({info["symbol"]: float(res['result']['list'][0]['lastPrice'])})
+            balance = float(USDTBalance) / self.count  # 코인 갯수별 균등 매매
+            self.USDTBalance[info["symbol"]] = (math.trunc(balance/10) * 10)
 
-        myCoin = {}
-        myCoin["BTCUSDT"] = {}
-        myCoin["BTCUSDT"]["LONG"] = self.tickers_buy["BTCUSDT"][:-2]
-        myCoin["BTCUSDT"]["SHORT"] = self.tickers_sell["BTCUSDT"][:-2]
-        myCoin["ETHUSDT"] = {}
-        myCoin["ETHUSDT"]["LONG"] = self.tickers_buy["ETHUSDT"][:-2]
-        myCoin["ETHUSDT"]["SHORT"] = self.tickers_sell["ETHUSDT"][:-2]
-        sendText = f"현재가: {nowPrices}\n\n보유코인 현황 -> {myCoin} \n\n보유 자산 : {int(USDTBalance)}$(코인별 거래금액 : {self.USDTBalance})\n"
+        # myCoin = {}
+        # myCoin["BTCUSDT"] = {}
+        # myCoin["BTCUSDT"]["LONG"] = self.info["symbol"][:-2]
+        # myCoin["BTCUSDT"]["SHORT"] = self.tickers_sell["BTCUSDT"][:-2]
+        # myCoin["ETHUSDT"] = {}
+        # myCoin["ETHUSDT"]["LONG"] = self.tickers_buy["ETHUSDT"][:-2]
+        # myCoin["ETHUSDT"]["SHORT"] = self.tickers_sell["ETHUSDT"][:-2]
+        # sendText = f"현재가: {nowPrices}\n\n보유코인 현황 -> {myCoin} \n\n보유 자산 : {int(USDTBalance)}$(코인별 거래금액 : {self.USDTBalance})\n"
+        sendText = f"현재가: {nowPrices}\n\n보유코인 현황 -> {self.info} \n\n보유 자산 : {int(USDTBalance)}$(코인별 거래금액 : {self.USDTBalance})\n"
         self.log(sendText)
         self.send_msg(sendText)
 
     def setCoinsPrice(self):
-        for ticker in self.tickers_buy:
+        for info in self.info:
             # 코인별 매수 목표가 계산
             
             res = self.session.get_kline(
                 category="linear",
-                symbol=ticker,
+                symbol=info["symbol"],
                 interval='D',
                 limit=5,
             )
@@ -272,32 +279,30 @@ class BybitAPI():
             interval = float(res['result']['list'][1][2]) - float(res['result']['list'][1][3])
             k_range = interval * 0.5
             targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = int(
-                targetPrice / self.tickers_buy[ticker][TICK_SIZE]) * self.tickers_buy[ticker][TICK_SIZE]
+            targetPrice = int(targetPrice / self.info["tickSize"]) * self.info["tickSize"]
 
-            self.tickers_buy[ticker][TARGET_PRICE] = targetPrice
-            self.tickers_buy[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][3]),
-                                                        float(res['result']['list'][1][3]),
-                                                        float(res['result']['list'][2][3]),
-                                                        float(res['result']['list'][3][3]),
-                                                        float(res['result']['list'][4][3]))
+            self.info["long"]["target"] = targetPrice
+            # self.info["long"]["loss"] = min(float(res['result']['list'][0][3]),
+            #                                             float(res['result']['list'][1][3]),
+            #                                             float(res['result']['list'][2][3]),
+            #                                             float(res['result']['list'][3][3]),
+            #                                             float(res['result']['list'][4][3]))
             
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = int(
-                targetPrice / self.tickers_sell[ticker][TICK_SIZE]) * self.tickers_sell[ticker][TICK_SIZE]
+            targetPrice = int(targetPrice / self.info["tickSize"]) * self.info["tickSize"]
 
-            self.tickers_sell[ticker][TARGET_PRICE] = targetPrice
-            self.tickers_sell[ticker][LOSS_PRICE] = min(float(res['result']['list'][0][2]),
-                                                        float(res['result']['list'][1][2]),
-                                                        float(res['result']['list'][2][2]),
-                                                        float(res['result']['list'][3][2]),
-                                                        float(res['result']['list'][4][2]))
+            self.info["short"]["target"] = targetPrice
+            # self.info["short"]["loss"] = min(float(res['result']['list'][0][2]),
+            #                                             float(res['result']['list'][1][2]),
+            #                                             float(res['result']['list'][2][2]),
+            #                                             float(res['result']['list'][3][2]),
+            #                                             float(res['result']['list'][4][2]))
 
 
             time.sleep(0.1)
 
-        sendText = f"목표가 계산 -> Long: {self.tickers_buy}, Short: {self.tickers_sell}"
+        sendText = f"목표가 계산 -> {self.info}"
         self.log(sendText)
         self.send_msg(sendText)
 

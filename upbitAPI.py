@@ -110,7 +110,7 @@ class UpbitPy():
             self.log(sendText)
             self.send_msg(sendText)
         else:
-            sendText = "모든 코인이 현재가 이하 -> 종료"
+            sendText = "모든 코인의 이동평균선이 현재가 이하 -> 종료"
             self.log(sendText)
             self.send_msg(sendText)
             
