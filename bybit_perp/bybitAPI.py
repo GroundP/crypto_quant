@@ -292,12 +292,12 @@ class BybitAPI():
             targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
             targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
 
-            self.info[LONG][TARGET_PRICE] = targetPrice
+            info[LONG][TARGET_PRICE] = targetPrice
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
             targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
 
-            self.info[SHORT][TARGET_PRICE] = targetPrice
+            info[SHORT][TARGET_PRICE] = targetPrice
 
 
             closePrices = []
@@ -315,8 +315,8 @@ class BybitAPI():
             longMATarget = max(MA5, MA10, MA20)
             shortMATarget = min(MA5, MA10, MA20)
             
-            self.info[LONG][MA_TARGET] = longMATarget
-            self.info[SHORT][MA_TARGET] = shortMATarget
+            info[LONG][MA_TARGET] = longMATarget
+            info[SHORT][MA_TARGET] = shortMATarget
 
             time.sleep(0.1)
 
