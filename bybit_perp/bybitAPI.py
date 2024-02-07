@@ -36,11 +36,11 @@ class BybitAPI():
 
         self.symbols = ["BTCUSDT", "ETHUSDT"]
         self.info = [{SYMBOL: "BTCUSDT", TICK_SIZE: 0, QTY_STEP: 0,
-                      LONG:  {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
-                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}},
+                      LONG:  {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, AVG_PRICE: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
+                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, AVG_PRICE: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}},
                      {SYMBOL: "ETHUSDT", TICK_SIZE: 0, QTY_STEP: 0,
-                      LONG: { TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
-                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}}]
+                      LONG: { TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, AVG_PRICE: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
+                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, AVG_PRICE: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}}]
         
         # [매수/매도 목표가, 손절가, 매수/매도가, 보유수, UPL, 틱사이즈, 수량단위]
         self.count = len(self.symbols)  # 매수/매도 코인 개수
@@ -77,134 +77,145 @@ class BybitAPI():
         self.setCoinsPrice()    # 목표가, 익절가, 손절가, 이평선 계산
         self.checkNowMyTickers()    # 보유 현황 확인
         
-        # while True:
-        #     try:
-        #         for ticker in self.tickers_buy:
-        #             res = self.session.get_tickers(
-        #                 category="linear",
-        #                 symbol=ticker,
-        #             )
+        while True:
+            try:
+                for info in self.info:
+                    symbol = info[SYMBOL]
+                    longD = info[LONG]
+                    shortD = info[SHORT]
                     
-        #             nowPrice = float(res['result']['list'][0]['lastPrice'])
+                    res = self.session.get_tickers(
+                        category="linear",
+                        symbol=info[SYMBOL],
+                    )
+                    
+                    nowPrice = float(res['result']['list'][0]['lastPrice'])
 
-        #             # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 포지션 오픈
-        #             if self.tickers_buy[ticker][AVG_PRICE] == 0:
-        #                 if nowPrice > int(self.tickers_buy[ticker][TARGET_PRICE]):
-        #                     # 레버리지
-        #                     qty = round(self.USDTBalance[ticker] / nowPrice /
-        #                                 self.tickers_buy[ticker][QTY_STEP] * LEVERAGE) * self.tickers_buy[ticker][QTY_STEP]
-        #                     res = self.bybit.place_order(
-        #                         category="linear",
-        #                         symbol=ticker,
-        #                         side="Buy",
-        #                         orderType="Market",
-        #                         qty=Decimal(str(qty)),
-        #                         timeInForce="GTC",
-        #                         positionIdx=0,
-        #                     )
+                    # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 포지션 오픈
+                    if longD[HAVING_QTY] == 0:
+                        if nowPrice > longD[TARGET_PRICE]:
+                            # 레버리지
+                            qty = self.adjustSize(self.USDTBalance[symbol] / nowPrice * LEVERAGE, info[QTY_STEP])
+                            price = self.adjustSize(nowPrice * 1.01, info[TICK_SIZE])
+                            res = self.bybit.place_order(
+                                category="linear",
+                                symbol=symbol,
+                                price=Decimal(str(price)),
+                                side="Buy",
+                                orderType="Limit",
+                                qty=Decimal(str(qty)),
+                                timeInForce="GTC",
+                                positionIdx=0,
+                            )
                             
-        #                     sendText = f"변동성 돌파! [{ticker}] Long 진입 -> 현재가: {nowPrice} > 목표가: {self.tickers_buy[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
-        #                     self.log(sendText)
-        #                     self.send_msg(sendText)
+                            sendText = f"변동성 돌파! [{symbol}] Long 진입 -> 현재가: {nowPrice} > 목표가: {longD[TARGET_PRICE]}, 수량: {self.USDTBalance[symbol]}$({qty}), 응답: {res}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
 
-        #                     time.sleep(1)
-        #                     self.checkNowMyTickers()
-        #             else:   # 보유수량이 있으므로 손절가와 현재가 비교 후 청산
-        #                 if nowPrice < float(self.tickers_buy[ticker][LOSS_PRICE]):
-        #                     res = self.bybit.place_order(
-        #                         category="linear",
-        #                         symbol=ticker,
-        #                         side="Sell",
-        #                         orderType="Market",
-        #                         qty=self.tickers_buy[ticker][HAVING_QTY],
-        #                         timeInForce="GTC",
-        #                         positionIdx=0,
-        #                     )
+                            time.sleep(1)
+                            self.checkNowMyTickers()
+                    else:   # 보유수량이 있으므로 손절가와 현재가 비교 후 청산
+                        if nowPrice < longD[LOSS_PRICE]:
+                            price = self.adjustSize(nowPrice * 0.99, info[TICK_SIZE])
+                            res = self.bybit.place_order(
+                                category="linear",
+                                symbol=symbol,
+                                price=Decimal(str(price)),
+                                side="Sell",
+                                orderType="Limit",
+                                qty=longD[HAVING_QTY],
+                                timeInForce="GTC",
+                                positionIdx=0,
+                            )
                             
-        #                     self.tickers_buy[ticker][AVG_PRICE] = 0
-        #                     self.tickers_buy[ticker][HAVING_QTY] = 0
-        #                     self.tickers_buy[ticker][UPL] = 0
-        #                     sendText = f"변동성 돌파! [{ticker}] Long 청산 -> 현재가: {nowPrice} < 손절가: {self.tickers_buy[ticker][LOSS_PRICE]}, 수량: {self.tickers_buy[ticker][HAVING_QTY]}, 응답: {res}"
-        #                     self.log(sendText)
-        #                     self.send_msg(sendText)
+                            longD[AVG_PRICE] = 0
+                            longD[HAVING_QTY] = 0
+                            longD[UPL] = 0
+                            sendText = f"손절ㅠㅠ [{symbol}] Long 청산 -> 현재가: {nowPrice} < 손절가: {longD[LOSS_PRICE]}, 수량: {longD[HAVING_QTY]}, 응답: {res}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
 
-        #                     time.sleep(1)
-        #                     self.checkNowMyTickers()
+                            time.sleep(1)
+                            self.checkNowMyTickers()
                             
                             
-        #             # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 오픈 포지션
-        #             if self.tickers_sell[ticker][AVG_PRICE] == 0:
-        #                 if nowPrice < int(self.tickers_sell[ticker][TARGET_PRICE]):
-        #                     # 레버리지
-        #                     qty = round(self.USDTBalance[ticker] / nowPrice /
-        #                                 self.tickers_sell[ticker][QTY_STEP] * LEVERAGE) * self.tickers_sell[ticker][QTY_STEP]
-        #                     res = self.bybit.place_order(
-        #                         category="linear",
-        #                         symbol=ticker,
-        #                         side="Sell",
-        #                         orderType="Market",
-        #                         qty=Decimal(str(qty)),
-        #                         timeInForce="GTC",
-        #                         positionIdx=0,
-        #                     )
+                    # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 오픈 포지션
+                    if shortD[HAVING_QTY] == 0:
+                        if nowPrice < shortD[TARGET_PRICE]:
+                            # 레버리지
+                            qty = self.adjustSize(self.USDTBalance[symbol] / nowPrice * LEVERAGE, info[QTY_STEP]) 
+                            price = self.adjustSize(nowPrice * 0.99, info[TICK_SIZE])
+                            
+                            res = self.bybit.place_order(
+                                category="linear",
+                                symbol=symbol,
+                                price=Decimal(str(price)),
+                                side="Sell",
+                                orderType="Limit",
+                                qty=Decimal(str(qty)),
+                                timeInForce="GTC",
+                                positionIdx=0,
+                            )
 
-        #                     sendText = f"변동성 돌파! [{ticker}] Short 진입 -> 현재가: {nowPrice} < 목표가: {self.tickers_sell[ticker][TARGET_PRICE]}, 수량: {self.USDTBalance[ticker]}$({qty}), 응답: {res}"
-        #                     self.log(sendText)
-        #                     self.send_msg(sendText)
+                            sendText = f"변동성 돌파! [{symbol}] Short 진입 -> 현재가: {nowPrice} < 목표가: {shortD[TARGET_PRICE]}, 수량: {self.USDTBalance[symbol]}$({qty}), 응답: {res}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
 
-        #                     time.sleep(1)
-        #                     self.checkNowMyTickers()
-        #             else:   # 보유수량이 있으므로 손절가와 현재가 비교 후 청산
-        #                 if nowPrice > float(self.tickers_sell[ticker][LOSS_PRICE]):
-        #                     res = self.bybit.place_order(
-        #                         category="linear",
-        #                         symbol=ticker,
-        #                         side="Buy",
-        #                         orderType="Market",
-        #                         qty=self.tickers_sell[ticker][HAVING_QTY],
-        #                         timeInForce="GTC",
-        #                         positionIdx=0,
-        #                     )
+                            time.sleep(1)
+                            self.checkNowMyTickers()
+                    else:   # 보유수량이 있으므로 손절가와 현재가 비교 후 청산
+                        if nowPrice > shortD[LOSS_PRICE]:
+                            price = self.adjustSize(nowPrice * 1.01, info[TICK_SIZE])
+                            res = self.bybit.place_order(
+                                category="linear",
+                                symbol=symbol,
+                                price=Decimal(str(price)),
+                                side="Buy",
+                                orderType="Limit",
+                                qty=shortD[HAVING_QTY],
+                                timeInForce="GTC",
+                                positionIdx=0,
+                            )
 
-        #                     self.tickers_sell[ticker][AVG_PRICE] = 0
-        #                     self.tickers_sell[ticker][HAVING_QTY] = 0
-        #                     self.tickers_sell[ticker][UPL] = 0
-        #                     sendText = f"변동성 돌파! [{ticker}] Short 청산 -> 현재가: {nowPrice} > 손절가: {self.tickers_sell[ticker][LOSS_PRICE]}, 수량: {self.tickers_sell[ticker][HAVING_QTY]}, 응답: {res}"
-        #                     self.log(sendText)
-        #                     self.send_msg(sendText)
+                            shortD[AVG_PRICE] = 0
+                            shortD[HAVING_QTY] = 0
+                            shortD[UPL] = 0
+                            sendText = f"변동성 돌파! [{symbol}] Short 청산 -> 현재가: {nowPrice} > 손절가: {shortD[LOSS_PRICE]}, 수량: {shortD[HAVING_QTY]}, 응답: {res}"
+                            self.log(sendText)
+                            self.send_msg(sendText)
 
-        #                     time.sleep(1)
-        #                     self.checkNowMyTickers()
+                            time.sleep(1)
+                            self.checkNowMyTickers()
 
-        #         nowMin = int(datetime.datetime.now().strftime('%M'))
-        #         if nowMin > self.chkTime:
-        #             if nowMin == 1:
-        #                 sendText = f"매매 대기 중 - {int(datetime.datetime.now().strftime('%H'))}"
-        #                 self.log(sendText)
-        #                 self.checkNowMyTickers()
+                nowMin = int(datetime.datetime.now().strftime('%M'))
+                if nowMin > self.chkTime:
+                    if nowMin == 1:
+                        sendText = f"매매 대기 중 - {int(datetime.datetime.now().strftime('%H'))}"
+                        self.log(sendText)
+                        self.checkNowMyTickers()
 
-        #             if nowMin == 59:
-        #                 self.chkTime = -1
-        #             else:
-        #                 self.chkTime = nowMin
+                    if nowMin == 59:
+                        self.chkTime = -1
+                    else:
+                        self.chkTime = nowMin
 
-        #         if int(datetime.datetime.now().strftime('%H%M')) == 859:
-        #             sendText = "거래종료 및 전량청산"
-        #             self.log(sendText)
-        #             self.send_msg(sendText)
+                if int(datetime.datetime.now().strftime('%H%M')) == 859:
+                    sendText = "거래종료 및 전량청산"
+                    self.log(sendText)
+                    self.send_msg(sendText)
 
-        #             self.closeAllCoin()  # 전체 매도
+                    self.closeAllCoin()  # 전체 매도
 
-        #             quit()
+                    quit()
 
-        #         time.sleep(0.15)
-        #     except Exception as e:
-        #         sendText = f"예외 발생 : {e}"
-        #         self.log(sendText)
+                time.sleep(0.15)
+            except Exception as e:
+                sendText = f"예외 발생 : {e}"
+                self.log(sendText)
 
 
-    def adjustTickSize(self, value, tickSize):
-        return round(value / tickSize) * tickSize
+    def adjustSize(self, value, size):
+        return round(value / size) * size
 
     def setTickSize(self):
         for info in self.info:
@@ -290,12 +301,12 @@ class BybitAPI():
             interval = float(res['result']['list'][1][2]) - float(res['result']['list'][1][3])
             k_range = interval * 0.5
             targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
+            targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[LONG][TARGET_PRICE] = targetPrice
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
+            targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[SHORT][TARGET_PRICE] = targetPrice
 
@@ -306,9 +317,9 @@ class BybitAPI():
             
                 
             # 이동평균선 구하기
-            MA5 = self.adjustTickSize(sum(closePrices[:5]) / 5, info[TICK_SIZE])
-            MA10 = self.adjustTickSize(sum(closePrices[:10]) / 10, info[TICK_SIZE])
-            MA20 = self.adjustTickSize(sum(closePrices[:20]) / 20, info[TICK_SIZE])
+            MA5 = self.adjustSize(sum(closePrices[:5]) / 5, info[TICK_SIZE])
+            MA10 = self.adjustSize(sum(closePrices[:10]) / 10, info[TICK_SIZE])
+            MA20 = self.adjustSize(sum(closePrices[:20]) / 20, info[TICK_SIZE])
             
             self.log(f"[{info[SYMBOL]}] MA5: {MA5}, MA10: {MA10}, MA20: {MA20}")
             
@@ -328,39 +339,39 @@ class BybitAPI():
         self.checkNowMyTickers()
 
         count = 0
-        for ticker in self.tickers_buy:
-            if self.tickers_buy[ticker][HAVING_QTY] > 0:
+        for info in self.info:
+            if info[LONG][HAVING_QTY] > 0:
                 res = self.bybit.place_order(
                     category="linear",
-                    symbol=ticker,
+                    symbol=info[SYMBOL],
                     side="Sell",
                     orderType="Market",
-                    qty=self.tickers_buy[ticker][HAVING_QTY],
+                    qty=info[LONG][HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0,
                     reduceOnly=True
                 )
                 
-                sendText = f"{ticker} Close Long 요청 -> 응답: {res}"
+                sendText = f"{info[SYMBOL]} Close Long 요청 -> 응답: {res}"
                 self.log(sendText)
                 self.send_msg(sendText)
                 count += 1
 
                 time.sleep(1)
                 
-            if self.tickers_sell[ticker][HAVING_QTY] > 0:
+            if info[SHORT][HAVING_QTY] > 0:
                 res = self.bybit.place_order(
                     category="linear",
-                    symbol=ticker,
+                    symbol=info[SYMBOL],
                     side="Buy",
                     orderType="Market",
-                    qty=self.tickers_sell[ticker][HAVING_QTY],
+                    qty=info[SHORT][HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0,
                     reduceOnly=True
                 )
 
-                sendText = f"{ticker} Close Short 요청 -> 응답: {res}"
+                sendText = f"{info[SYMBOL]} Close Short 요청 -> 응답: {res}"
                 self.log(sendText)
                 self.send_msg(sendText)
                 count += 1
