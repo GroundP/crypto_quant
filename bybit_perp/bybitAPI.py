@@ -290,12 +290,12 @@ class BybitAPI():
             interval = float(res['result']['list'][1][2]) - float(res['result']['list'][1][3])
             k_range = interval * 0.5
             targetPrice = float(res['result']['list'][0][1]) + k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = int(targetPrice / self.info[TICK_SIZE]) * self.info[TICK_SIZE]
+            targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
 
             self.info[LONG][TARGET_PRICE] = targetPrice
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
-            targetPrice = int(targetPrice / self.info[TICK_SIZE]) * self.info[TICK_SIZE]
+            targetPrice = self.adjustTickSize(targetPrice, info[TICK_SIZE])
 
             self.info[SHORT][TARGET_PRICE] = targetPrice
 
