@@ -310,7 +310,7 @@ class BybitAPI():
             MA10 = self.adjustTickSize(sum(closePrices[:10]) / 10, info[TICK_SIZE])
             MA20 = self.adjustTickSize(sum(closePrices[:20]) / 20, info[TICK_SIZE])
             
-            self.log(f"MA5: {MA5}, MA10: {MA10}, MA20: {MA20}")
+            self.log(f"[{info[SYMBOL]}] MA5: {MA5}, MA10: {MA10}, MA20: {MA20}")
             
             longMATarget = max(MA5, MA10, MA20)
             shortMATarget = min(MA5, MA10, MA20)
