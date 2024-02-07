@@ -35,12 +35,12 @@ class BybitAPI():
         self.check_fail = 'logs/' + now.strftime('%Y-%m-%d') + '.log'
 
         self.symbols = ["BTCUSDT", "ETHUSDT"]
-        self.info = [{SYMBOL: "BTCUSDT", 
-                      LONG:  {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0, TICK_SIZE: 0, QTY_STEP: 0},
-                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0, TICK_SIZE: 0, QTY_STEP: 0}},
-                     {SYMBOL: "ETHUSDT", 
-                      LONG: { TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0, TICK_SIZE: 0, QTY_STEP: 0},
-                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0, TICK_SIZE: 0, QTY_STEP: 0}}]
+        self.info = [{SYMBOL: "BTCUSDT", TICK_SIZE: 0, QTY_STEP: 0,
+                      LONG:  {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
+                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}},
+                     {SYMBOL: "ETHUSDT", TICK_SIZE: 0, QTY_STEP: 0,
+                      LONG: { TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0},
+                      SHORT: {TARGET_PRICE: 0, PROFIT_PRICE: 0, LOSS_PRICE: 0, MA_TARGET: 0, HAVING_QTY: 0, UPL: 0, PROFIT_RATE : 0}}]
         
         # [매수/매도 목표가, 손절가, 매수/매도가, 보유수, UPL, 틱사이즈, 수량단위]
         self.count = len(self.symbols)  # 매수/매도 코인 개수
