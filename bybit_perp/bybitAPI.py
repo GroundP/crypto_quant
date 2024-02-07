@@ -213,8 +213,8 @@ class BybitAPI():
                 symbol=info[SYMBOL]
             )
             
-            info[SYMBOL][TICK_SIZE] = float(res['result']['list'][0]['priceFilter']['tickSize'])
-            info[SYMBOL][QTY_STEP] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
+            info[TICK_SIZE] = float(res['result']['list'][0]['priceFilter']['tickSize'])
+            info[QTY_STEP] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
     
     def checkNowMyTickers(self):
         res = self.bybit.get_coins_balance(
