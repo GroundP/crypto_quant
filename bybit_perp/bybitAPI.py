@@ -23,6 +23,10 @@ MA_TARGET = "MA"
 
 LEVERAGE = 10
 
+# TODO: 익절가에 익절하는 프로세스 추가(익절 후 다음날까지 재진입 금지)
+# TODO: 프로그램 종료 없이 계속 진행할 수 있도록 변경(데몬화)
+# TODO: 하루에 long and short side 모두 체크하지 않도록(한 방향만 체크하도록) 변경
+# TODO: 8시 59분에 수익률이 마이너스인 경우 청산하지 않도록 변경(좀더 로직 생각해보자..)
 
 class BybitAPI():
     def __init__(self):
