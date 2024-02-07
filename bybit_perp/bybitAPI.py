@@ -302,7 +302,7 @@ class BybitAPI():
 
             closePrices = []
             for elem in res['result']['list']:
-                closePrices.insert(elem[4])
+                closePrices.append(float(elem[4]))
             
                 
             # 이동평균선 구하기
