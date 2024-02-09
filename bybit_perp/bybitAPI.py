@@ -110,7 +110,7 @@ class BybitAPI():
                     #             res = self.bybit.place_order(
                     #                 category="linear",
                     #                 symbol=symbol,
-                    #                 price=Decimal(str(price)),
+                    #                 price=str(price),
                     #                 side="Buy",
                     #                 orderType="Limit",
                     #                 qty=Decimal(str(qty)),
@@ -130,7 +130,7 @@ class BybitAPI():
                     #         res = self.bybit.place_order(
                     #             category="linear",
                     #             symbol=symbol,
-                    #             price=Decimal(str(price)),
+                    #             price=str(price),
                     #             side="Sell",
                     #             orderType="Limit",
                     #             qty=longD[HAVING_QTY],
@@ -155,7 +155,7 @@ class BybitAPI():
                     #         res = self.bybit.place_order(
                     #             category="linear",
                     #             symbol=symbol,
-                    #             price=Decimal(str(price)),
+                    #             price=str(price),
                     #             side="Sell",
                     #             orderType="Limit",
                     #             qty=longD[HAVING_QTY],
@@ -185,7 +185,7 @@ class BybitAPI():
                     #             res = self.bybit.place_order(
                     #                 category="linear",
                     #                 symbol=symbol,
-                    #                 price=Decimal(str(price)),
+                    #                 price=str(price),
                     #                 side="Sell",
                     #                 orderType="Limit",
                     #                 qty=Decimal(str(qty)),
@@ -205,7 +205,7 @@ class BybitAPI():
                     #         res = self.bybit.place_order(
                     #             category="linear",
                     #             symbol=symbol,
-                    #             price=Decimal(str(price)),
+                    #             price=str(price),
                     #             side="Sell",
                     #             orderType="Limit",
                     #             qty=shortD[HAVING_QTY],
@@ -230,7 +230,7 @@ class BybitAPI():
                     #         res = self.bybit.place_order(
                     #             category="linear",
                     #             symbol=symbol,
-                    #             price=Decimal(str(price)),
+                    #             price=str(price),
                     #             side="Buy",
                     #             orderType="Limit",
                     #             qty=shortD[HAVING_QTY],
@@ -296,12 +296,11 @@ class BybitAPI():
                 if nowPrice > longD[TARGET_PRICE]:
                     qty = self.adjustSize(
                         self.USDTBalance[symbol] / nowPrice * LEVERAGE, qtyStep)
-                    price = self.adjustSize(
-                        nowPrice * 1.01, tickSize)
+                    price = self.adjustSize(nowPrice * 1.01, tickSize)
                     res = self.bybit.place_order(
                         category="linear",
                         symbol=symbol,
-                        price=Decimal(str(price)),
+                        price=str(price),
                         side="Buy",
                         orderType="Limit",
                         qty=Decimal(str(qty)),
@@ -322,7 +321,7 @@ class BybitAPI():
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=Decimal(str(price)),
+                    price=str(price),
                     side="Sell",
                     orderType="Limit",
                     qty=longD[HAVING_QTY],
@@ -348,7 +347,7 @@ class BybitAPI():
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=Decimal(str(price)),
+                    price=str(price),
                     side="Sell",
                     orderType="Limit",
                     qty=longD[HAVING_QTY],
@@ -380,7 +379,7 @@ class BybitAPI():
                     res = self.bybit.place_order(
                         category="linear",
                         symbol=symbol,
-                        price=Decimal(str(price)),
+                        price=str(price),
                         side="Sell",
                         orderType="Limit",
                         qty=Decimal(str(qty)),
@@ -401,7 +400,7 @@ class BybitAPI():
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=Decimal(str(price)),
+                    price=str(price),
                     side="Sell",
                     orderType="Limit",
                     qty=shortD[HAVING_QTY],
@@ -427,7 +426,7 @@ class BybitAPI():
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=Decimal(str(price)),
+                    price=str(price),
                     side="Buy",
                     orderType="Limit",
                     qty=shortD[HAVING_QTY],
@@ -584,7 +583,7 @@ class BybitAPI():
                         res = self.bybit.place_order(
                             category="linear",
                             symbol=symbol,
-                            price=Decimal(str(price)),
+                            price=str(price),
                             side="Sell",
                             orderType="Limit",
                             qty=shortD[HAVING_QTY],
@@ -609,7 +608,7 @@ class BybitAPI():
                         res = self.bybit.place_order(
                             category="linear",
                             symbol=symbol,
-                            price=Decimal(str(price)),
+                            price=str(price),
                             side="Buy",
                             orderType="Limit",
                             qty=shortD[HAVING_QTY],
