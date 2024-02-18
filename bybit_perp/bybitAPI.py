@@ -356,7 +356,8 @@ class BybitAPI():
                         for a, b in value.items():
 
                             if a != IS_CHECK and b > 0:
-                                strInfo += f"{a} : {b}, "
+                                v = str(b)
+                                strInfo += f"{a} : {v}, "
 
                         strInfo += "\n"
 
