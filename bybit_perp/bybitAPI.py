@@ -346,16 +346,16 @@ class BybitAPI():
             
         strInfo = ""
         for info in self.info:
-            for key, value in info:
-                if key == 'symbol':
+            for key, value in info.items():
+                if key == SYMBOL:
                     strInfo += f"[{value}] "
 
-                if key == 'long' or key == 'short':
-                    if value["isCheck"] == True:
+                if key == LONG or key == SHORT:
+                    if value[IS_CHECK] == True:
                         strInfo += f"{key} - "
                         for a, b in value.items():
 
-                            if a != "isCheck" and b > 0:
+                            if a != IS_CHECK and b > 0:
                                 strInfo += f"{a} : {b}, "
 
                         strInfo += "\n"
