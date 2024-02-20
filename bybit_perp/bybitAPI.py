@@ -141,6 +141,9 @@ class BybitAPI():
             info[QTY_STEP] = float(res['result']['list'][0]['lotSizeFilter']['qtyStep'])
     
     def checkLongSide(self, nowPrice, symbol, longD, tickSize, qtyStep):
+        if longD[IS_CHECK] == False:
+            return
+        
         # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 포지션 오픈
         if longD[HAVING_QTY] == 0:
             if longD[IS_PROFIT] == False:
@@ -218,6 +221,9 @@ class BybitAPI():
                 self.checkNowMyTickers()
     
     def checkShortSide(self, nowPrice, symbol, shortD, tickSize, qtyStep):
+        if shortD[IS_CHECK] == False:
+            return
+        
         # 보유수량이 없는 상태이므로 목표가와 현재가격 비교 후 오픈 포지션
         if shortD[HAVING_QTY] == 0:
             if shortD[IS_PROFIT] == False:
