@@ -408,12 +408,12 @@ class BybitAPI():
             # 이동평균선 구하기
             MA5 = self.adjustSize(sum(closePrices[:5]) / 5, info[TICK_SIZE])
             MA10 = self.adjustSize(sum(closePrices[:10]) / 10, info[TICK_SIZE])
-            MA20 = self.adjustSize(sum(closePrices[:20]) / 20, info[TICK_SIZE])
+            MA15 = self.adjustSize(sum(closePrices[:15]) / 15, info[TICK_SIZE])
             
-            self.log(f"[{info[SYMBOL]}] MA5: {MA5}, MA10: {MA10}, MA20: {MA20}")
+            self.log(f"[{info[SYMBOL]}] MA5: {MA5}, MA10: {MA10}, MA15: {MA15}")
             
-            longMATarget = max(MA5, MA10, MA20)
-            shortMATarget = min(MA5, MA10, MA20)
+            longMATarget = max(MA5, MA10, MA15)
+            shortMATarget = min(MA5, MA10, MA15)
             
             info[LONG][MA_TARGET] = longMATarget
             info[SHORT][MA_TARGET] = shortMATarget
