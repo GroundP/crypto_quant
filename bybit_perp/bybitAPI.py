@@ -389,15 +389,15 @@ class BybitAPI():
             targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[LONG][TARGET_PRICE] = targetPrice
-            info[LONG][PROFIT_PRICE] = self.adjustSize(targetPrice * 1.02, info[TICK_SIZE])
-            info[LONG][LOSS_PRICE] = self.adjustSize(targetPrice * 0.99, info[TICK_SIZE])
+            info[LONG][PROFIT_PRICE] = self.adjustSize(targetPrice * 1.03, info[TICK_SIZE])
+            info[LONG][LOSS_PRICE] = self.adjustSize(targetPrice * 0.98, info[TICK_SIZE])
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
             targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[SHORT][TARGET_PRICE] = targetPrice
-            info[SHORT][PROFIT_PRICE] = self.adjustSize(targetPrice * 0.98, info[TICK_SIZE])
-            info[SHORT][LOSS_PRICE] = self.adjustSize(targetPrice * 1.01, info[TICK_SIZE])
+            info[SHORT][PROFIT_PRICE] = self.adjustSize(targetPrice * 0.97, info[TICK_SIZE])
+            info[SHORT][LOSS_PRICE] = self.adjustSize(targetPrice * 1.02, info[TICK_SIZE])
 
 
             closePrices = []
@@ -498,13 +498,26 @@ class BybitAPI():
 
         count = 0
         for info in self.info:
-            if info[LONG][HAVING_QTY] > 0:
+            symbol = info[SYMBOL]
+            longD = info[LONG]
+            shortD = info[SHORT]
+            
+            res = self.session.get_tickers(
+                category="linear",
+                symbol=symbol,
+            )
+
+            nowPrice = float(res['result']['list'][0]['lastPrice'])
+                
+            if longD[HAVING_QTY] > 0:
+                price = self.adjustSize(nowPrice * 0.99, info[TICK_SIZE])
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=info[SYMBOL],
                     side="Sell",
-                    orderType="Market",
-                    qty=info[LONG][HAVING_QTY],
+                    price=str(price),
+                    orderType="Limit",
+                    qty=longD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0,
                     reduceOnly=True
@@ -517,13 +530,15 @@ class BybitAPI():
 
                 time.sleep(1)
                 
-            if info[SHORT][HAVING_QTY] > 0:
+            if shortD[HAVING_QTY] > 0:
+                price = self.adjustSize(nowPrice * 1.01, info[TICK_SIZE])
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=info[SYMBOL],
                     side="Buy",
-                    orderType="Market",
-                    qty=info[SHORT][HAVING_QTY],
+                    price=str(price),
+                    orderType="Limit",
+                    qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0,
                     reduceOnly=True
