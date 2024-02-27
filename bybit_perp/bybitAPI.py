@@ -127,7 +127,7 @@ class BybitAPI():
                 self.log(sendText)
 
 
-    def countDecimalDigits(number):
+    def countDecimalDigits(self, number):
         # 숫자를 문자열로 변환하여 소수 부분을 추출
         decimal_part = str(number).split('.')[1] if '.' in str(number) else ''
 
