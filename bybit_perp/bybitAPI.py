@@ -127,8 +127,16 @@ class BybitAPI():
                 self.log(sendText)
 
 
+    def countDecimalDigits(number):
+        # 숫자를 문자열로 변환하여 소수 부분을 추출
+        decimal_part = str(number).split('.')[1] if '.' in str(number) else ''
+
+        # 소수 부분의 자릿수 반환
+        return len(decimal_part)
+
     def adjustSize(self, value, size):
-        return round(value / size) * size
+        digits = self.countDecimalDigits(size)
+        return round(round(value / size) * size, digits)
 
     def setTickSize(self):
         for info in self.info:
