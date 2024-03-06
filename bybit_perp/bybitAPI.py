@@ -112,7 +112,7 @@ class BybitAPI():
                     else:
                         self.chkTime = nowMin
 
-                if int(datetime.datetime.now().strftime('%H%M')) == 859:
+                if int(datetime.datetime.now().strftime('%H%M')) == 959:
                     sendText = "거래종료 및 포지션 정리"
                     self.log(sendText)
                     self.send_msg(sendText)
@@ -337,13 +337,13 @@ class BybitAPI():
                 if (position['side'] == 'Buy'):
                     for info in self.info:
                         if info[SYMBOL] == symbol:
-                            info[LONG]["average"] = price
+                            info[LONG][AVG_PRICE] = price
                             info[LONG][HAVING_QTY] = size
                             info[LONG][UPL] = upl
                 else:
                     for info in self.info:
                         if info[SYMBOL] == symbol:
-                            info[SHORT]["average"] = price
+                            info[SHORT][AVG_PRICE] = price
                             info[SHORT][HAVING_QTY] = size
                             info[SHORT][UPL] = upl
 
@@ -369,7 +369,7 @@ class BybitAPI():
                         strInfo += f"{key} - "
                         for a, b in value.items():
 
-                            if a != IS_CHECK and b > 0:
+                            if a != IS_CHECK and b != 0:
                                 v = str(b)
                                 strInfo += f"{a} : {v}, "
 
@@ -397,15 +397,15 @@ class BybitAPI():
             targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[LONG][TARGET_PRICE] = targetPrice
-            info[LONG][PROFIT_PRICE] = self.adjustSize(targetPrice * 1.03, info[TICK_SIZE])
-            info[LONG][LOSS_PRICE] = self.adjustSize(targetPrice * 0.98, info[TICK_SIZE])
+            info[LONG][PROFIT_PRICE] = self.adjustSize(targetPrice * 1.04, info[TICK_SIZE])
+            info[LONG][LOSS_PRICE] = self.adjustSize(targetPrice * 0.97, info[TICK_SIZE])
             
             targetPrice = float(res['result']['list'][0][1]) - k_range  # 0번째 인덱스는 당일 데이터
             targetPrice = self.adjustSize(targetPrice, info[TICK_SIZE])
 
             info[SHORT][TARGET_PRICE] = targetPrice
-            info[SHORT][PROFIT_PRICE] = self.adjustSize(targetPrice * 0.97, info[TICK_SIZE])
-            info[SHORT][LOSS_PRICE] = self.adjustSize(targetPrice * 1.02, info[TICK_SIZE])
+            info[SHORT][PROFIT_PRICE] = self.adjustSize(targetPrice * 0.96, info[TICK_SIZE])
+            info[SHORT][LOSS_PRICE] = self.adjustSize(targetPrice * 1.03, info[TICK_SIZE])
 
 
             closePrices = []
