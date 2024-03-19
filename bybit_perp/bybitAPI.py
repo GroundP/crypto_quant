@@ -188,8 +188,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
 
                 longD[AVG_PRICE] = 0
@@ -214,8 +213,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
 
                 longD[AVG_PRICE] = 0
@@ -270,8 +268,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
 
                 shortD[AVG_PRICE] = 0
@@ -296,8 +293,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
 
                 shortD[AVG_PRICE] = 0
@@ -462,8 +458,7 @@ class BybitAPI():
                             orderType="Limit",
                             qty=shortD[HAVING_QTY],
                             timeInForce="GTC",
-                            positionIdx=0,
-                            reduceOnly=True
+                            positionIdx=0
                         )
                         
                         sendText = f"잔여 포지션 청산 -> [{symbol}] Long 청산 -> 현재가: {nowPrice}, UPL: {longD[UPL]}, Rate: {longD[PROFIT_RATE]} 수량: {longD[HAVING_QTY]}, 응답: {res}"
@@ -487,8 +482,7 @@ class BybitAPI():
                             orderType="Limit",
                             qty=shortD[HAVING_QTY],
                             timeInForce="GTC",
-                            positionIdx=0,
-                            reduceOnly=True
+                            positionIdx=0
                         )
 
                         sendText = f"잔여 포지션 청산 -> [{symbol}] Short 청산 -> 현재가: {nowPrice}, UPL: {shortD[UPL]}, Rate: {shortD[PROFIT_RATE]} 수량: {shortD[HAVING_QTY]}, 응답: {res}"
@@ -527,8 +521,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
                 
                 sendText = f"{info[SYMBOL]} Close Long 요청 -> 응답: {res}"
@@ -548,8 +541,7 @@ class BybitAPI():
                     orderType="Limit",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
-                    positionIdx=0,
-                    reduceOnly=True
+                    positionIdx=0
                 )
 
                 sendText = f"{info[SYMBOL]} Close Short 요청 -> 응답: {res}"
