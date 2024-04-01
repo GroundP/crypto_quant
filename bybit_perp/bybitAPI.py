@@ -57,6 +57,7 @@ class BybitAPI():
         self.log(sendText)
         self.send_msg(sendText)
 
+        # __init__
         with open("keys.json", 'r') as file:
             data = json.load(file)
             apiKey = data["api-key"]
@@ -81,8 +82,8 @@ class BybitAPI():
         
         self.setTickSize()  # 틱사이즈, 호가단위 계산
         self.setCoinsPrice()    # 목표가, 익절가, 손절가, 이평선 계산
+        self.checkMA()  # 타겟 Side 판단
         self.checkNowMyTickers()    # 보유 현황 확인
-        self.checkMA()
         
         while True:
             try:
@@ -112,12 +113,12 @@ class BybitAPI():
                     else:
                         self.chkTime = nowMin
 
-                if int(datetime.datetime.now().strftime('%H%M')) == 959:
+                if int(datetime.datetime.now().strftime('%H%M')) == 859:
                     sendText = "거래종료 및 포지션 정리"
                     self.log(sendText)
                     self.send_msg(sendText)
 
-                    self.closeAllCoin()  # 전체 매도
+                    self.closeAllPositions()  # 전체 매도
 
                     quit()
 
@@ -495,7 +496,7 @@ class BybitAPI():
                 
         
         
-    def closeAllCoin(self):
+    def closeAllPositions(self):
         self.checkNowMyTickers()
 
         count = 0
