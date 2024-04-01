@@ -157,15 +157,12 @@ class BybitAPI():
         if longD[HAVING_QTY] == 0:
             if longD[IS_PROFIT] == False:
                 if nowPrice > longD[TARGET_PRICE]:
-                    qty = self.adjustSize(
-                        self.USDTBalance[symbol] / nowPrice * LEVERAGE, qtyStep)
-                    price = self.adjustSize(nowPrice * 1.01, tickSize)
+                    qty = self.adjustSize(self.USDTBalance[symbol] / nowPrice * LEVERAGE, qtyStep)
                     res = self.bybit.place_order(
                         category="linear",
                         symbol=symbol,
-                        price=str(price),
                         side="Buy",
-                        orderType="Limit",
+                        orderType="Market",
                         qty=Decimal(str(qty)),
                         timeInForce="GTC",
                         positionIdx=0,
@@ -179,14 +176,11 @@ class BybitAPI():
                     self.checkNowMyTickers()
         else:   # 보유수량이 있으므로 억절가/손절가와 현재가 비교 후 청산
             if nowPrice > longD[PROFIT_PRICE]:
-                price = self.adjustSize(
-                    nowPrice * 0.99, tickSize)
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=str(price),
                     side="Sell",
-                    orderType="Limit",
+                    orderType="Market",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
@@ -204,14 +198,11 @@ class BybitAPI():
                 self.checkNowMyTickers()
 
             if nowPrice < longD[LOSS_PRICE]:
-                price = self.adjustSize(
-                    nowPrice * 0.99, tickSize)
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=str(price),
                     side="Sell",
-                    orderType="Limit",
+                    orderType="Market",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
@@ -235,17 +226,13 @@ class BybitAPI():
         if shortD[HAVING_QTY] == 0:
             if shortD[IS_PROFIT] == False:
                 if nowPrice < shortD[TARGET_PRICE]:
-                    qty = self.adjustSize(
-                        self.USDTBalance[symbol] / nowPrice * LEVERAGE, qtyStep)
-                    price = self.adjustSize(
-                        nowPrice * 0.99, tickSize)
+                    qty = self.adjustSize(self.USDTBalance[symbol] / nowPrice * LEVERAGE, qtyStep)
 
                     res = self.bybit.place_order(
                         category="linear",
                         symbol=symbol,
-                        price=str(price),
                         side="Sell",
-                        orderType="Limit",
+                        orderType="Market",
                         qty=Decimal(str(qty)),
                         timeInForce="GTC",
                         positionIdx=0,
@@ -259,14 +246,11 @@ class BybitAPI():
                     self.checkNowMyTickers()
         else:   # 보유수량이 있으므로 익절가/손절가와 현재가 비교 후 청산
             if nowPrice < shortD[PROFIT_PRICE]:
-                price = self.adjustSize(
-                    nowPrice * 1.01, tickSize)
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=str(price),
                     side="Sell",
-                    orderType="Limit",
+                    orderType="Market",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
@@ -284,14 +268,11 @@ class BybitAPI():
                 self.checkNowMyTickers()
 
             if nowPrice > shortD[LOSS_PRICE]:
-                price = self.adjustSize(
-                    nowPrice * 1.01, tickSize)
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=symbol,
-                    price=str(price),
                     side="Buy",
-                    orderType="Limit",
+                    orderType="Market",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
@@ -450,13 +431,11 @@ class BybitAPI():
                     self.send_msg(sendText)
                     
                     if longD[HAVING_QTY] > 0:
-                        price = self.adjustSize(nowPrice * 0.99, info[TICK_SIZE])
                         res = self.bybit.place_order(
                             category="linear",
                             symbol=symbol,
-                            price=str(price),
                             side="Sell",
-                            orderType="Limit",
+                            orderType="Market",
                             qty=shortD[HAVING_QTY],
                             timeInForce="GTC",
                             positionIdx=0
@@ -474,13 +453,11 @@ class BybitAPI():
                     self.send_msg(sendText)
 
                     if shortD[HAVING_QTY] > 0:
-                        price = self.adjustSize(nowPrice * 1.01, info[TICK_SIZE])
                         res = self.bybit.place_order(
                             category="linear",
                             symbol=symbol,
-                            price=str(price),
                             side="Buy",
-                            orderType="Limit",
+                            orderType="Market",
                             qty=shortD[HAVING_QTY],
                             timeInForce="GTC",
                             positionIdx=0
@@ -513,13 +490,11 @@ class BybitAPI():
             nowPrice = float(res['result']['list'][0]['lastPrice'])
                 
             if longD[HAVING_QTY] > 0:
-                price = self.adjustSize(nowPrice * 0.99, info[TICK_SIZE])
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=info[SYMBOL],
                     side="Sell",
-                    price=str(price),
-                    orderType="Limit",
+                    orderType="Market",
                     qty=longD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
@@ -533,13 +508,11 @@ class BybitAPI():
                 time.sleep(1)
                 
             if shortD[HAVING_QTY] > 0:
-                price = self.adjustSize(nowPrice * 1.01, info[TICK_SIZE])
                 res = self.bybit.place_order(
                     category="linear",
                     symbol=info[SYMBOL],
                     side="Buy",
-                    price=str(price),
-                    orderType="Limit",
+                    orderType="Market",
                     qty=shortD[HAVING_QTY],
                     timeInForce="GTC",
                     positionIdx=0
